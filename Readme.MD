@@ -2,4 +2,4 @@
 
 # payment status update
 
-[def]: images/status-update.PNG
+![Payment Status Update](images/status-update.PNG)
