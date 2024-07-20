@@ -10,6 +10,8 @@ public class GwRequest {
     private String id;
     private double amount;
     private String mobileNumber;
+    private String status; 
+    private String ref;    
 
     // Getters and setters
     public String getId() {
@@ -34,5 +36,21 @@ public class GwRequest {
 
     public void setMobileNumber(String mobileNumber) {
         this.mobileNumber = mobileNumber;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
     }
 }

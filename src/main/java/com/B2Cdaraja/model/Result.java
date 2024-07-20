@@ -5,6 +5,7 @@ public class Result {
     private String id;
     private String status;
     private String ref;
+    private String responseDescription; 
 
     // Getters and setters
     public String getId() {
@@ -29,5 +30,13 @@ public class Result {
 
     public void setRef(String ref) {
         this.ref = ref;
+    }
+
+    public String getResponseDescription() { // New getter
+        return responseDescription;
+    }
+
+    public void setResponseDescription(String responseDescription) { // New setter
+        this.responseDescription = responseDescription;
     }
 }
