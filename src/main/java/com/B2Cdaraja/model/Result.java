@@ -2,18 +2,27 @@ package com.B2Cdaraja.model;
 
 public class Result {
 
-    private String id;
+    private String transactionId;
+    private String commandId;
     private String status;
     private String ref;
-    private String responseDescription; 
+    private String responseDescription;
 
     // Getters and setters
-    public String getId() {
-        return id;
+    public String getTransactionId() {
+        return transactionId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public String getCommandId() {
+        return commandId;
+    }
+
+    public void setCommandId(String commandId) {
+        this.commandId = commandId;
     }
 
     public String getStatus() {
@@ -32,11 +41,11 @@ public class Result {
         this.ref = ref;
     }
 
-    public String getResponseDescription() { // New getter
+    public String getResponseDescription() {
         return responseDescription;
     }
 
-    public void setResponseDescription(String responseDescription) { // New setter
+    public void setResponseDescription(String responseDescription) {
         this.responseDescription = responseDescription;
     }
 }

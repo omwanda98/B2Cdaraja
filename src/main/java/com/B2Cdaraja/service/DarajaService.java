@@ -5,13 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
 import com.B2Cdaraja.model.GwRequest;
 import com.B2Cdaraja.model.Result;
 import com.B2Cdaraja.repository.PaymentRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
-
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -67,16 +65,16 @@ public class DarajaService {
         }
     }
 
-    private String generateUniqueRef() {
+    private String generateUniqueTransactionId() {
         SecureRandom random = new SecureRandom();
-        StringBuilder ref = new StringBuilder();
+        StringBuilder transactionId = new StringBuilder();
         for (int i = 0; i < 4; i++) {
-            ref.append((char) ('A' + random.nextInt(26)));
+            transactionId.append((char) ('A' + random.nextInt(26)));
         }
-        for (int i = 0; i < 3; i++) {
-            ref.append(random.nextInt(10));
+        for (int i = 0; i < 4; i++) {
+            transactionId.append(random.nextInt(10));
         }
-        return ref.toString();
+        return transactionId.toString();
     }
 
     private boolean isValidKenyanSafaricomNumber(String mobileNumber) {
@@ -86,10 +84,24 @@ public class DarajaService {
     private boolean isValidAmount(double amount) {
         return amount >= MIN_AMOUNT && amount <= MAX_AMOUNT;
     }
+    
+    private String generateUniqueRef() {
+        SecureRandom random = new SecureRandom();
+        StringBuilder ref = new StringBuilder();
+        for (int i = 0; i < 4; i++) {
+            ref.append((char) ('A' + random.nextInt(26)));
+        }
+        for (int i = 0; i < 4; i++) {
+            ref.append(random.nextInt(10));
+        }
+        return ref.toString();
+    }
+
 
     public Result processB2CRequest(GwRequest gwRequest) {
         Result result = new Result();
-        result.setId(gwRequest.getId());
+        result.setTransactionId(gwRequest.getTransactionId());
+        result.setCommandId(gwRequest.getCommandId());
         result.setStatus("Pending");
         result.setResponseDescription("Service request successful");
 
@@ -107,7 +119,7 @@ public class DarajaService {
 
         String uniqueRef = generateUniqueRef();
         result.setRef(uniqueRef);
-        gwRequest.setRef(uniqueRef);
+        gwRequest.setRef(uniqueRef); // Set ref in GwRequest object
 
         try {
             String accessToken = getOAuthToken();
@@ -118,7 +130,7 @@ public class DarajaService {
             JSONObject jsonBody = new JSONObject();
             jsonBody.put("Initiator", "testapi");
             jsonBody.put("SecurityCredential", "N3VlFrUDJGsJ+eqAXgm8Kr6RdRKQRCyrAPuheFiPvG/iFlYMyifCiHwxN9ehnl2t7Mw/zWWdMjFLbvCw+lOwQmrwFDeNY59Hw3JTBKfGkNdZN01RzlZAga7ZAn6070wnHe8VHGKWkefaMybGlBc3kdKLqXAK4Ri6MQLPN9bugHpyz/Gh7+fL3QIB5mSgEs85puFAZTyWM2HATOOMWnsEBMwlgEl8enBsp5VT82TWfIjqPjpsBob1KMBe83vS5ijuNaQS0WxuP1eG+clZv/lO/N+IGo6iqm79sUBN38T7bv6NJLU8Eh7oAe9OJSImbWgySFWRppo3Ejv6ij+QLVpanw==");
-            jsonBody.put("CommandID", "SalaryPayment");
+            jsonBody.put("CommandID", gwRequest.getCommandId());
             jsonBody.put("Amount", gwRequest.getAmount());
             jsonBody.put("PartyA", "600990");
             jsonBody.put("PartyB", gwRequest.getMobileNumber());
@@ -154,7 +166,7 @@ public class DarajaService {
 
                 // Save to MongoDB
                 gwRequest.setStatus(result.getStatus()); // Ensure GwRequest's status is updated
-                paymentRepository.save(gwRequest);
+                paymentRepository.save(gwRequest); // Save GwRequest with ref to MongoDB
 
                 // Send to Kafka
                 kafkaTemplate.send("b2c-requests", gwRequest);
@@ -175,15 +187,18 @@ public class DarajaService {
         return result;
     }
 
+    //FETCHING THE PAYMENT STATUS
     public Result fetchPaymentStatus(String transactionId) {
-        Optional<GwRequest> optionalGwRequest = paymentRepository.findById(transactionId);
+        Optional<GwRequest> optionalGwRequest = paymentRepository.findByTransactionId(transactionId);
         Result result = new Result();
-        result.setId(transactionId);
+        result.setTransactionId(transactionId);
 
         if (optionalGwRequest.isPresent()) {
             GwRequest gwRequest = optionalGwRequest.get();
+            result.setCommandId(gwRequest.getCommandId());
             result.setRef(gwRequest.getRef());
             result.setStatus(gwRequest.getStatus());
+
             // Set appropriate response description based on status
             if ("Pending".equals(gwRequest.getStatus())) {
                 result.setResponseDescription("Waiting for approval");
@@ -202,29 +217,74 @@ public class DarajaService {
 
         return result;
     }
+
+    //UPDATE STATUS
+//    public Result updatePaymentStatus(Result result) {
+//        // Fetch GwRequest by transactionId
+//        Optional<GwRequest> optionalGwRequest = paymentRepository.findByTransactionId(result.getTransactionId());
+//        if (optionalGwRequest.isPresent()) {
+//            GwRequest gwRequest = optionalGwRequest.get();
+//
+//            // Update status and ref
+//            gwRequest.setStatus(result.getStatus());
+//            gwRequest.setRef(result.getRef());
+//
+//            // Save the updated GwRequest back to the repository
+//            paymentRepository.save(gwRequest);
+//
+//            // Prepare the Result with updated information
+//            result.setCommandId(gwRequest.getCommandId());
+//            result.setRef(gwRequest.getRef());
+//
+//            // Set responseDescription based on the status
+//            if ("Completed".equals(result.getStatus())) {
+//                result.setResponseDescription("Payment successful");
+//            } else {
+//                result.setResponseDescription("Status updated to " + result.getStatus());
+//            }
+//        } else {
+//            // Handle case where GwRequest is not found
+//            result.setStatus("Not Found");
+//            result.setRef("N/A");
+//            result.setResponseDescription("Request not found");
+//        }
+//        return result;
+//    }
     public Result updatePaymentStatus(Result result) {
-        Optional<GwRequest> optionalGwRequest = paymentRepository.findById(result.getId());
+        Optional<GwRequest> optionalGwRequest = paymentRepository.findByTransactionId(result.getTransactionId());
         if (optionalGwRequest.isPresent()) {
             GwRequest gwRequest = optionalGwRequest.get();
+
+            // Debugging before update
+            System.out.println("Before Update - TransactionId: " + gwRequest.getTransactionId() + ", Ref: " + gwRequest.getRef());
+
+            // Update status and ref
             gwRequest.setStatus(result.getStatus());
             gwRequest.setRef(result.getRef());
 
-            // Update responseDescription based on the status
+            // Save the updated GwRequest back to the repository
+            paymentRepository.save(gwRequest);
+
+            // Debugging after update
+            System.out.println("After Update - TransactionId: " + gwRequest.getTransactionId() + ", Ref: " + gwRequest.getRef());
+
+            // Prepare the Result with updated information
+            result.setCommandId(gwRequest.getCommandId());
+            result.setRef(gwRequest.getRef());
+
+            // Set responseDescription based on the status
             if ("Completed".equals(result.getStatus())) {
                 result.setResponseDescription("Payment successful");
             } else {
-                // Set a default or error message if needed
                 result.setResponseDescription("Status updated to " + result.getStatus());
             }
-
-            paymentRepository.save(gwRequest);
         } else {
             // Handle case where GwRequest is not found
             result.setStatus("Not Found");
+            result.setRef("N/A");
             result.setResponseDescription("Request not found");
         }
         return result;
-
     }
 
 }

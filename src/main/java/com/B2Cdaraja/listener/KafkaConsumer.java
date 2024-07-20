@@ -16,9 +16,11 @@ public class KafkaConsumer {
     @KafkaListener(topics = "b2c-responses", groupId = "group_id")
     public void consume(Result result) {
         // Update MongoDB with the response status
-        paymentRepository.findById(result.getId()).ifPresent(gwRequest -> {
-            // Assuming a separate result repository exists to store the Result status and reference
-            // Update the Result collection with status and reference
+        paymentRepository.findByTransactionId(result.getTransactionId()).ifPresent(gwRequest -> {
+            gwRequest.setStatus(result.getStatus());
+            gwRequest.setRef(result.getRef());
+            // Save the updated GwRequest to MongoDB
+            paymentRepository.save(gwRequest);
         });
     }
 }

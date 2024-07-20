@@ -1,17 +1,22 @@
 package com.B2Cdaraja.model;
 
+import org.intellij.lang.annotations.Pattern;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import jakarta.annotation.Nonnull;
 
 @Document(collection = "daraja_db")
 public class GwRequest {
 
     @Id
-    private String id;
+    private String id; // For MongoDB internal use
+    private String transactionId; // Unique identifier for the transaction
+    private String commandId; // Command ID
     private double amount;
     private String mobileNumber;
-    private String status; 
-    private String ref;    
+    private String status;
+    private String ref;
 
     // Getters and setters
     public String getId() {
@@ -20,6 +25,22 @@ public class GwRequest {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public String getCommandId() {
+        return commandId;
+    }
+
+    public void setCommandId(String commandId) {
+        this.commandId = commandId;
     }
 
     public double getAmount() {

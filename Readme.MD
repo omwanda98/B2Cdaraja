@@ -2,7 +2,7 @@
 
 # payment status update
 
-![Success request](images/success-req.PNG)
+![Success request](images/b2crequest.PNG)
 ![Invalid request](images/invalid.PNG)
 ![Approval](images/approval.PNG)
-![Payment Status Update](images/succesfull.PNG)
+![Payment Status Update](images/update-status.PNG)
