@@ -1,5 +1,5 @@
 # Use the official Maven image to build the application
-FROM maven:3.8.6-openjdk-17 AS build
+FROM maven:latest AS build
 WORKDIR /app
 COPY . .
 RUN mvn clean package -DskipTests
