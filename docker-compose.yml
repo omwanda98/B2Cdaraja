@@ -26,7 +26,7 @@ services:
       - app-network
 
   zookeeper:
-    image: wurstmeister/zookeeper:3.8
+    image: wurstmeister/zookeeper:latest
     container_name: zookeeper
     ports:
       - "2181:2181"
